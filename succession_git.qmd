@@ -4,9 +4,7 @@ format: html
 editor: visual
 ---
 
-## Quarto
-
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+## Loading all packages
 
 ```{r}
 
@@ -19,10 +17,12 @@ library(openxlsx)
 library(rdacca.hp)
 library(cowplot)
 library(openxlsx)
+
 ```
 
+## Getting the environmental variables
+
 ```{r}
-#data pipeline####
 
 # importing mean age of the oldest conifers####
 avg_age_conifers <- readxl::read_xlsx("avg_age_conifers.xlsx")
