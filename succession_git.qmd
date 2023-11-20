@@ -1,5 +1,7 @@
 ---
 title: "succession_git"
+format: html
+editor: visual
 ---
 
 ## Quarto
@@ -7,5 +9,29 @@ title: "succession_git"
 Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
 
 ```{r}
-1 + 1
+
+library(here)
+library(tidyverse)
+library(readr)
+library(readxl)
+library(vegan)
+library(openxlsx)
+library(rdacca.hp)
+library(cowplot)
+library(openxlsx)
+```
+
+```{r}
+#data pipeline####
+
+# importing mean age of the oldest conifers####
+avg_age_conifers <- readxl::read_xlsx("succession/avg_age_conifers.xlsx")
+avg_age_conifers <- as.data.frame(avg_age_conifers) 
+
+# importing all the environmental variables####
+load(file ="succession/FDyData.RData" )
+all_env <- as.data.frame(FDyData$Env)
+
+all_env %>%
+  filter(ForestType == "Spruce") -> all_env_spruce
 ```
