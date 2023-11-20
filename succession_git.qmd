@@ -25,11 +25,11 @@ library(openxlsx)
 #data pipeline####
 
 # importing mean age of the oldest conifers####
-avg_age_conifers <- readxl::read_xlsx("succession/avg_age_conifers.xlsx")
+avg_age_conifers <- readxl::read_xlsx("avg_age_conifers.xlsx")
 avg_age_conifers <- as.data.frame(avg_age_conifers) 
 
 # importing all the environmental variables####
-load(file ="succession/FDyData.RData" )
+load(file ="FDyData.RData" )
 all_env <- as.data.frame(FDyData$Env)
 
 all_env %>%
