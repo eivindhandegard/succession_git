@@ -4,6 +4,13 @@ format: html
 editor: visual
 ---
 
+# How important is Forest Age in explaining the species composition of Near-natural Spruce Forests?
+
+# Data cleaning and wrangling
+
+```{r}
+```
+
 ## Loading all packages
 
 ```{r}
@@ -18,6 +25,7 @@ library(rdacca.hp)
 library(cowplot)
 library(openxlsx)
 
+here::here()
 ```
 
 ## Getting the environmental variables
@@ -34,4 +42,61 @@ all_env <- as.data.frame(FDyData$Env)
 
 all_env %>%
   filter(ForestType == "Spruce") -> all_env_spruce
+
+# creating the age variables
+all_env_spruce %>% 
+  mutate( old_tree_identity = AgeMaxSpruce < AgeMaxDec ) %>% 
+  mutate(old_tree_identity = replace_na(old_tree_identity, F)) -> all_env_spruce
+
+
+```
+
+```{r}
+
+
+#Tree stratum ## all study areas####
+
+GrongEpiphyticSpeciesList<- read.csv("species_data/GrongEpiphticSpeciesList.csv",
+                                      header = T)
+
+RingerikeEpiphyticSpeciesList<- read.csv("succession/Root/Root/4.1.Site/Ringerike/Raw_Data/RingerikeEpiphyticSpeciesList.csv",
+                                      header = T)
+
+SigdalEpiphyticSpeciesList<- read.csv("yep/SigdalEpiphyticSpeciesList.csv",
+                                      header = T)
+
+
+all_epiphytes <- rbind(GrongEpiphyticSpeciesList, RingerikeEpiphyticSpeciesList, SigdalEpiphyticSpeciesList)
+
+
+
+# A list of all the epihytes found
+all_epiphytes <- unique(all_epiphytes)
+
+
+all_species <- as.data.frame(FDyData$Species) 
+
+epiphytes <- all_species[,unlist(all_epiphytes)] # the unlist is needed to subset
+
+
+epiphytes$SQ <- rownames(epiphytes)
+
+
+
+all_data_epiphytes <- left_join(all_env_spruce,epiphytes, by ="SQ")
+
+all_data_epiphytes$sums <- rowSums(all_data_epiphytes[,47:217])
+
+all_data_epiphytes %>% 
+  filter(sums > 4) %>% 
+  filter( !is.na(Avg_d.c)) -> all_data_epiphytes 
+
+# removing species poor rows
+
+
+
+
+# splitting the data again to get the environmental variables
+all_data_epiphytes %>% 
+  select(1:47) -> EnvScores_all_all
 ```
