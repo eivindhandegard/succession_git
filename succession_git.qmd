@@ -1,14 +1,13 @@
 ---
-title: "succession_git"
+title: "How important is Forest Age in explaining the species composition of Near-natural Spruce Forests?"
 format: html
 editor: visual
 ---
 
-# How important is Forest Age in explaining the species composition of Near-natural Spruce Forests?
-
 # Data cleaning and wrangling
 
 ```{r}
+
 ```
 
 ## Loading all packages
@@ -28,7 +27,7 @@ library(openxlsx)
 here::here()
 ```
 
-## Getting the environmental variables
+## Getting all the environmental variables
 
 ```{r}
 
@@ -40,6 +39,9 @@ avg_age_conifers <- as.data.frame(avg_age_conifers)
 load(file ="FDyData.RData" )
 all_env <- as.data.frame(FDyData$Env)
 
+
+
+
 all_env %>%
   filter(ForestType == "Spruce") -> all_env_spruce
 
@@ -49,6 +51,12 @@ all_env_spruce %>%
   mutate(old_tree_identity = replace_na(old_tree_identity, F)) -> all_env_spruce
 
 
+# adds more productivity variables
+productivity_var_all <- openxlsx::read.xlsx("productivity_var_all.xlsx")
+
+all_env_spruce <- left_join(all_env_spruce,productivity_var_all, by = c("RNr","Site"))
+
+
 ```
 
 ```{r}
@@ -56,13 +64,13 @@ all_env_spruce %>%
 
 #Tree stratum ## all study areas####
 
-GrongEpiphyticSpeciesList<- read.csv("species_data/GrongEpiphticSpeciesList.csv",
+GrongEpiphyticSpeciesList<- read.csv("species_data/GrongEpiphyticSpeciesList.csv",
                                       header = T)
 
-RingerikeEpiphyticSpeciesList<- read.csv("succession/Root/Root/4.1.Site/Ringerike/Raw_Data/RingerikeEpiphyticSpeciesList.csv",
+RingerikeEpiphyticSpeciesList<- read.csv("species_data/RingerikeEpiphyticSpeciesList.csv",
                                       header = T)
 
-SigdalEpiphyticSpeciesList<- read.csv("yep/SigdalEpiphyticSpeciesList.csv",
+SigdalEpiphyticSpeciesList<- read.csv("species_data//SigdalEpiphyticSpeciesList.csv",
                                       header = T)
 
 
@@ -71,28 +79,24 @@ all_epiphytes <- rbind(GrongEpiphyticSpeciesList, RingerikeEpiphyticSpeciesList,
 
 
 # A list of all the epihytes found
-all_epiphytes <- unique(all_epiphytes)
+all_epiphytes_names <- unique(all_epiphytes)
 
 
-all_species <- as.data.frame(FDyData$Species) 
+all_species <- FDyData$Species
 
-epiphytes <- all_species[,unlist(all_epiphytes)] # the unlist is needed to subset
+all_epiphytes <- all_species[,unlist(all_epiphytes_names)]
 
+all_epiphytes$SQ <- rownames(all_epiphytes)
 
-epiphytes$SQ <- rownames(epiphytes)
-
-
-
-all_data_epiphytes <- left_join(all_env_spruce,epiphytes, by ="SQ")
+all_data_epiphytes <- left_join(all_env_spruce,all_epiphytes, by ="SQ")
 
 all_data_epiphytes$sums <- rowSums(all_data_epiphytes[,47:217])
+
+# removing species poor rows
 
 all_data_epiphytes %>% 
   filter(sums > 4) %>% 
   filter( !is.na(Avg_d.c)) -> all_data_epiphytes 
-
-# removing species poor rows
-
 
 
 
