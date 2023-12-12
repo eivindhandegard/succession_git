@@ -1,0 +1,259 @@
+---
+title: " How important is Forest Age in explaining the species composition of Near-natural Spruce Forests? Data cleaning and wrangling"
+format: html
+editor: visual
+---
+
+# Data cleaning and wrangling
+
+## Loading all packages
+
+```{r}
+
+library(here)
+library(tidyverse)
+library(readr)
+library(readxl)
+library(vegan)
+library(openxlsx)
+library(rdacca.hp)
+library(cowplot)
+library(openxlsx)
+
+here::here()
+```
+
+## Getting all the environmental variables
+
+```{r}
+# importing mean age of the oldest conifers####
+avg_age_conifers <- readxl::read_xlsx("avg_age_conifers.xlsx")
+avg_age_conifers <- as.data.frame(avg_age_conifers)
+
+# importing all the environmental variables####
+load(file = "FDyData.RData")
+all_env <- as.data.frame(FDyData$Env)
+
+
+all_env %>%
+  filter(ForestType == "Spruce") -> all_env_spruce
+
+# creating the age variables
+all_env_spruce |>
+  mutate(old_tree_identity = AgeMaxSpruce < AgeMaxDec) |>
+  mutate(old_tree_identity = replace_na(old_tree_identity, F)) -> all_env_spruce
+
+
+# adds more productivity variables
+productivity_var_all <- openxlsx::read.xlsx("productivity_var_all.xlsx")
+
+all_env_spruce <- left_join(all_env_spruce, productivity_var_all, by = c("RNr", "Site"))
+
+
+```
+
+### 
+
+### Preparing the species on trees data from all study areas
+
+```{r}
+# Tree stratum ## all study areas####
+
+GrongEpiphyticSpeciesList <- read.csv("species_data/GrongEpiphyticSpeciesList.csv",
+  header = T
+)
+
+RingerikeEpiphyticSpeciesList <- read.csv("species_data/RingerikeEpiphyticSpeciesList.csv",
+  header = T
+)
+
+SigdalEpiphyticSpeciesList <- read.csv("species_data//SigdalEpiphyticSpeciesList.csv",
+  header = T
+)
+
+
+all_species_on_trees <- rbind(GrongEpiphyticSpeciesList, RingerikeEpiphyticSpeciesList, SigdalEpiphyticSpeciesList)
+
+
+# A list of all the species on trees found
+all_species_on_trees_names <- unique(all_species_on_trees)
+
+
+all_species <- FDyData$Species
+
+all_species_on_trees <- all_species[, unlist(all_species_on_trees_names)]
+
+all_species_on_trees$SQ <- rownames(all_species_on_trees)
+
+# joining the environmental variables and present species to get the right rows
+
+all_data_trees <- left_join(all_env_spruce, all_species_on_trees, by = "SQ")
+
+all_data_trees$sums <- rowSums(all_data_trees[, 47:217])
+
+
+# removing species poor rows and NA
+all_data_trees |>
+  filter(sums > 4) |>
+  filter(!is.na(Avg_d.c)) -> all_data_trees
+
+# splitting the data again to get the species
+speciesmat_on_trees <- all_data_trees[, 47:217]
+
+# splitting the data again to get the environmental variables
+all_data_trees |>
+  select(1:47) -> env_var_trees
+
+```
+
+### Preparing the vascular plants on the ground data from all study areas
+
+```{r}
+
+# ground stratum ## all study areas####
+
+GronggroundpeciesList <- read.csv("species_data/GrongGroundSpeciesList.csv",
+                                   header = T
+)
+
+RingerikegroundpeciesList <- read.csv("species_data/RingerikeGroundSpeciesList.csv",
+                                       header = T
+)
+
+SigdalgroundpeciesList <- read.csv("species_data/SigdalGroundSpeciesList.csv",
+                                    header = T
+)
+
+
+all_species_on_ground <- rbind(GronggroundpeciesList, RingerikegroundpeciesList, SigdalgroundpeciesList)
+
+
+# A list of all the species on ground found
+all_species_on_ground_names <- unique(all_species_on_ground)
+
+
+all_species <- FDyData$Species
+
+all_species_on_ground <- all_species[, unlist(all_species_on_ground_names)]
+
+all_species_on_ground$SQ <- rownames(all_species_on_ground)
+
+# joining the environmental variables and present species to get the right rows
+
+all_data_ground <- left_join(all_env_spruce, all_species_on_ground, by = "SQ")
+
+all_data_ground$sums <- rowSums(all_data_ground[, 47:289])
+
+
+# removing species poor rows and NA
+all_data_ground |>
+  filter(sums > 4) |>
+  filter(!is.na(Avg_d.c)) -> all_data_ground
+
+# splitting the data again to get the species
+speciesmat_on_ground <- all_data_ground[, 47:289]
+
+# splitting the data again to get the environmental variables
+all_data_ground |>
+  select(1:47) -> env_var_ground
+```
+
+```{r}
+
+# rock stratum ## all study areas####
+
+GrongrockspeciesList <- read.csv("species_data/GrongRockSpeciesList.csv",
+                                  header = T
+)
+
+RingerikerockspeciesList <- read.csv("species_data/RingerikeRockSpeciesList.csv",
+                                      header = T
+)
+
+SigdalrockspeciesList <- read.csv("species_data/SigdalRockSpeciesList.csv",
+                                   header = T
+)
+
+
+all_species_on_rock <- rbind(GrongrockspeciesList, RingerikerockspeciesList, SigdalrockspeciesList)
+
+
+# A list of all the species on rock found
+all_species_on_rock_names <- unique(all_species_on_rock)
+
+
+all_species <- FDyData$Species
+
+all_species_on_rock <- all_species[, unlist(all_species_on_rock_names)]
+
+all_species_on_rock$SQ <- rownames(all_species_on_rock)
+
+# joining the environmental variables and present species to get the right rows
+
+all_data_rock <- left_join(all_env_spruce, all_species_on_rock, by = "SQ")
+
+all_data_rock$sums <- rowSums(all_data_rock[, 47:341])
+
+
+# removing species poor rows and NA
+all_data_rock |>
+  filter(sums > 4) |>
+  filter(!is.na(Avg_d.c)) -> all_data_rock
+
+# splitting the data again to get the species
+speciesmat_on_rock <- all_data_rock[, 47:341]
+
+# splitting the data again to get the environmental variables
+all_data_rock |>
+  select(1:47) -> env_var_rock
+```
+
+### Importing the deadwood species data from all study areas
+
+```{r}
+
+GrongDeadwoodSpeciesList <- read.csv("species_data/GrongDeadwoodSpeciesList.csv",
+                                  header = T
+)
+
+RingerikeDeadwoodSpeciesList <- read.csv("species_data/RingerikeDeadwoodSpeciesList.csv",
+                                      header = T
+)
+
+SigdalDeadwoodSpeciesList <- read.csv("species_data/SigdalDeadwoodSpeciesList.csv",
+                                   header = T
+)
+
+
+all_species_on_deadwood <- rbind(GrongDeadwoodSpeciesList, RingerikeDeadwoodSpeciesList, SigdalDeadwoodSpeciesList)
+
+
+# A list of all the species on deadwood found
+all_species_on_deadwood_names <- unique(all_species_on_deadwood)
+
+
+all_species <- FDyData$Species
+
+all_species_on_deadwood <- all_species[, unlist(all_species_on_deadwood_names)]
+
+all_species_on_deadwood$SQ <- rownames(all_species_on_deadwood)
+
+# joining the environmental variables and present species to get the right rows
+
+all_data_deadwood <- left_join(all_env_spruce, all_species_on_deadwood, by = "SQ")
+
+all_data_deadwood$sums <- rowSums(all_data_deadwood[, 47:184])
+
+
+# removing species poor rows and NA
+all_data_deadwood |>
+  filter(sums > 4) |>
+  filter(!is.na(Avg_d.c)) -> all_data_deadwood
+
+# splitting the data again to get the species
+speciesmat_on_deadwood <- all_data_deadwood[, 47:184]
+
+# splitting the data again to get the environmental variables
+all_data_deadwood |>
+  select(1:47) -> env_var_deadwood
+```
